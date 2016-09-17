@@ -1,36 +1,26 @@
-from flask import Flask, request, render_template, g
-from flask_ask import Ask, statement, question, session
-# from flask.ext.cache import Cache
-from werkzeug.contrib.cache import SimpleCache
-from json import dumps
-from unreal_socket import UnrealSocket
-from random import randint, choice
-from werkzeug.serving import WSGIRequestHandler
-from threaded_request import ThreadedRequest, RequestType
 import requests
 import sys
 import logging
 import threading
+import os
+
+from flask import Flask, request, render_template, g
+from flask_ask import Ask, statement, question, session
+from flask_sqlalchemy import SQLAlchemy
+from random import randint, choice
+from werkzeug.serving import WSGIRequestHandler
+
+from threaded_request import ThreadedRequest, RequestType
+from heroku_logger import p
+from config import Config
+from unreal_socket import UnrealSocket
+
 app = Flask(__name__)
-
 ask = Ask(app, "/")
+app.config.from_object(os.environ['APP_SETTINGS'])
+db = SQLAlchemy(app)
 
-cache = SimpleCache()
-# cache = Cache(app,config={'CACHE_TYPE': 'simple'})
-# cache.init_app(app)
-
-# query_list = []
-
-ROOT_URL = 'https://4f50efe3.ngrok.io'
-app.debug = True
-app.threaded = True
-WSGIRequestHandler.protocol_version = "HTTP/1.1"
-logging.getLogger("flask_ask").setLevel(logging.ERROR)
-app.sock = None
-
-def p(*args):
-  print args[0] % (len(args) > 1 and args[1:] or [])
-  sys.stdout.flush()
+from models import  GameState, Session
 
 # Step 1
 @app.route('/register', methods=['POST'])
