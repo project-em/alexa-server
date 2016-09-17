@@ -6,6 +6,7 @@ import os
 
 from flask import Flask, request, render_template, g
 from flask_ask import Ask, statement, question, session
+from werkzeug.contrib.cache import SimpleCache
 from flask_sqlalchemy import SQLAlchemy
 from random import randint, choice
 from werkzeug.serving import WSGIRequestHandler
@@ -20,6 +21,10 @@ ask = Ask(app, "/")
 app.config.from_object(os.environ['APP_SETTINGS'])
 db = SQLAlchemy(app)
 
+cache = SimpleCache()
+cache = Cache(app,config={'CACHE_TYPE': 'simple'})
+cache.init_app(app)
+
 from models import GameState, Session
 
 @app.route('/register', methods=['POST'])
@@ -27,8 +32,8 @@ def register_client():
     host = request.json['host']
     port = request.json['port']
     new_session = Session(host, port)
-    db.Session.add(new_session)
-    db.commit()
+    db.session.add(new_session)
+    db.session.commit()
     return 'ok'
     
 @session_required
