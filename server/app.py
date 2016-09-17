@@ -12,31 +12,33 @@ from werkzeug.serving import WSGIRequestHandler
 
 from threaded_request import ThreadedRequest, RequestType
 from heroku_logger import p
-from config import Config
 from unreal_socket import UnrealSocket
+from extensions import session_required
 
 app = Flask(__name__)
 ask = Ask(app, "/")
 app.config.from_object(os.environ['APP_SETTINGS'])
 db = SQLAlchemy(app)
 
-from models import  GameState, Session
+from models import GameState, Session
 
-# Step 1
 @app.route('/register', methods=['POST'])
 def register_client():
     host = request.json['host']
     port = request.json['port']
-    app.sock = UnrealSocket(host, port)
-    p(str(app.sock))
+    new_session = Session(host, port)
+    db.Session.add(new_session)
+    db.commit()
     return 'ok'
     
-# Step 3
+@session_required
 @app.route('/alexa', methods=['POST'])
-def execute_command():
+def execute_command(key):
     p('test')
-    if app.sock:
-        app.sock.send(request.json['command'])
+    session = Session.query.filter_by(key=key).first()
+    if session:
+        socket = UnrealSocket(session.host, session.port)
+        socket.send(request.json['command'])
         p('ok')
         return 'OK'
     else:
@@ -55,7 +57,7 @@ def press_button(color):
     elif(color == 'blue'): command = 2
     elif(color == 'green'): command = 3
     elif(color == 'yellow'): command = 4
-    reqs = ThreadedRequest(ROOT_URL + '/alexa', RequestType.Post, data={'command' : command})
+    reqs = ThreadedRequest(app.config.ROOT_URL + '/alexa', RequestType.Post, data={'command' : command})
     button_msg = render_template('press', buttonMsg = color)
     return question(button_msg)
 
@@ -65,12 +67,12 @@ def quit():
 
 @ask.intent("QueryWorldIntent")
 def query_world():
-    reqs = ThreadedRequest(ROOT_URL + '/alexa', RequestType.Post, data = {'command' : 0})
+    reqs = ThreadedRequest(app.config.ROOT_URL + '/alexa', RequestType.Post, data = {'command' : 0})
     return question(buildQueryList(getQueryList()))
 
 @ask.intent("NumberIntent")
 def number_query():
-    reqs = ThreadedRequest(ROOT_URL + '/alexa', RequestType.Post, data={'command' : 5})
+    reqs = ThreadedRequest(app.config.ROOT_URL + '/alexa', RequestType.Post, data={'command' : 5})
     return question(buildSayList(getSpeech()))
 
 @app.route('/say', methods=['POST'])
@@ -91,7 +93,7 @@ def answer(first, second, third, fourth):
         return statement(render_template('lose'))
     if [first, second, third, fourth] == winning_numbers:
         msg = render_template('win')
-        reqs = ThreadedRequest(ROOT_URL + '/alexa', RequestType.Post, data={'command' : 6})
+        reqs = ThreadedRequest(app.config.ROOT_URL + '/alexa', RequestType.Post, data={'command' : 6})
     else:
         msg = render_template('lose')
     return statement(msg)
@@ -121,7 +123,7 @@ def buildQueryList(query_list):
 
 @ask.intent("LocationIntent")
 def locate_surounding():
-    reqs = ThreadedRequest(ROOT_URL + '/alexa', RequestType.Post, data={'command' : 0})
+    reqs = ThreadedRequest(app.config.ROOT_URL + '/alexa', RequestType.Post, data={'command' : 0})
     return question(buildQueryList(getQueryList()))
 
 @ask.intent("NameIntent")
