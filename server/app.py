@@ -22,8 +22,8 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 db = SQLAlchemy(app)
 
 cache = SimpleCache()
-cache = Cache(app,config={'CACHE_TYPE': 'simple'})
-cache.init_app(app)
+# cache = Cache(app,config={'CACHE_TYPE': 'simple'})
+# cache.init_app(app)
 
 from models import GameState, Session
 
