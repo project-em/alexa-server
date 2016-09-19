@@ -1,6 +1,6 @@
 import threading
 import socket
-from heroku_logger import p
+from server.util.heroku_logger import p
 
 class UnrealCommand(object):
     QueryWorld = 0
