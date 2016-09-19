@@ -21,7 +21,10 @@ cache = SimpleCache()
 
 from views.unreal import *
 from views.intent_generation import *
+<<<<<<< HEAD
 from views.alexa import *
+=======
+>>>>>>> dc525181e7133a7b188cdb33fbd0508aec2080a4
 
 def shutdown_server():
     func = request.environ.get('werkzeug.server.shutdown')
