@@ -1,7 +1,7 @@
 import requests
 import threading
 from json import dumps
-from heroku_logger import p
+from server.util.heroku_logger import p
 
 class RequestType(object):
 
